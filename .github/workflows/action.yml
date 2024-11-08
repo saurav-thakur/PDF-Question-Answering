@@ -48,3 +48,7 @@ jobs:
       - name: Run Tests
         run: |
           poetry run pytest tests/test_app.py
+
+      - name: Stop FastAPI server
+        run: |
+          pkill -f uvicorn
