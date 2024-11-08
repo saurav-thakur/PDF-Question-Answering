@@ -1,6 +1,6 @@
 import os
 
-# import pytest
+import pytest
 from starlette.testclient import TestClient
 from app import app
 
