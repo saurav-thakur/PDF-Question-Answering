@@ -1,9 +1,7 @@
 # pinecone
 DIMENSION: int = 384
 METRIC: str = "cosine"
-CLOUD: str = "aws"
-REGION: str = "us-east-1"
-INDEX_NAME: str = "pdf-qa"
+
 
 # splitting text
 CHUNK_SIZE: int = 500
