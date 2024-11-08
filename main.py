@@ -1,12 +1,9 @@
 import sys
 from pdf_question_answering.llm.llm_service import (
     PDFService,
-    EmbeddingService,
     VectorDBService,
-    LLMService,
     PDFQuestionAnsweringService,
 )
-from pdf_question_answering.llm.embeddings import Embeddings
 from pdf_question_answering.utils.read_pdf import PDF
 from pdf_question_answering.llm.embeddings import Embeddings
 from pdf_question_answering.llm.vector_db import VectorDB
@@ -19,9 +16,9 @@ def main(data_folder, question):
     try:
         logging.info("Initializing PDF, embedding, vector DB, and LLM services.")
         pdf_service = PDFService(pdf=PDF())
-        embedding_service = EmbeddingService(embedding=Embeddings())
+        embedding_service = Embeddings()
         vector_db_service = VectorDBService(vector_db=VectorDB())
-        llm_service = LLMService(llm=LLMs())
+        llm_service = LLMs()
 
         qa_service = PDFQuestionAnsweringService(
             pdf_service=pdf_service,

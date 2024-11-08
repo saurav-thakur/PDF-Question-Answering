@@ -16,7 +16,7 @@ load_dotenv()
 
 
 class LLMs:
-    def __init__(self, retriver) -> None:
+    def __init__(self) -> None:
         self.system_prompt = SYSTEM_PROMPT
         self.llm_model = ChatGroq(
             groq_api_key=os.environ.get("GROQ_API_KEY"), model=LLM_MODEL
@@ -24,12 +24,15 @@ class LLMs:
         self.prompt = ChatPromptTemplate.from_messages(
             [("system", self.system_prompt), ("human", "{input}")]
         )
-        self.retriver = retriver
+        # self.retriver = retriver
 
-    def generate_answer(self, question):
+    def generate_answer(self, docsearch, question):
         question_answer_chain = create_stuff_documents_chain(
             self.llm_model, self.prompt
         )
-        rag_chain = create_retrieval_chain(self.retriver, question_answer_chain)
+        retriver = docsearch.as_retriever(
+            search_type="similarity", search_kwargs={"k": 3}
+        )
+        rag_chain = create_retrieval_chain(retriver, question_answer_chain)
         response = rag_chain.invoke({"input": f"{question}"})
         return response["answer"]

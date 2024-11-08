@@ -25,21 +25,6 @@ class PDFService:
             raise PDFQAException(e, sys)
 
 
-# Embedding Service
-class EmbeddingService:
-    def __init__(self, embedding: Embeddings):
-        self.embedding = embedding
-
-    def get_embeddings(self):
-        try:
-            embeddings = self.embedding.download_hugging_face_embeddings()
-            logging.info("Downloaded embeddings")
-            return embeddings
-        except Exception as e:
-            logging.error(f"Failed to download embeddings: {e}")
-            raise PDFQAException(e, sys)
-
-
 # Vector DB Service
 class VectorDBService:
     def __init__(self, vector_db: VectorDB):
@@ -47,9 +32,9 @@ class VectorDBService:
 
     def setup_vector_db(self, text_chunks, embeddings):
         try:
-            self.vector_db.create_vector_database()
-            self.vector_db.insert_data_into_vector_db(text_chunks, embeddings)
-            docsearch = self.vector_db.load_existing_index()
+            # self.vector_db.create_vector_database()
+            # self.vector_db.insert_data_into_vector_db(text_chunks, embeddings)
+            docsearch = self.vector_db.load_existing_index(embeddings=embeddings)
             logging.info("Vector database created and populated")
             return docsearch
         except Exception as e:
@@ -59,7 +44,13 @@ class VectorDBService:
 
 # Main Service Coordinator
 class PDFQuestionAnsweringService:
-    def __init__(self, pdf_service, embedding_service, vector_db_service, llm_service):
+    def __init__(
+        self,
+        pdf_service: PDFService,
+        embedding_service: Embeddings,
+        vector_db_service: VectorDBService,
+        llm_service: LLMs,
+    ):
         self.pdf_service = pdf_service
         self.embedding_service = embedding_service
         self.vector_db_service = vector_db_service
@@ -68,35 +59,11 @@ class PDFQuestionAnsweringService:
     def answer_question_from_pdf(self, data_folder, question):
         try:
             text_chunks = self.pdf_service.extract_text_chunks(data_folder)
-            embeddings = self.embedding_service.get_embeddings()
+            embeddings = self.embedding_service.download_hugging_face_embeddings()
             docsearch = self.vector_db_service.setup_vector_db(text_chunks, embeddings)
             answer = self.llm_service.generate_answer(docsearch, question)
             logging.info("Question answered successfully")
             return answer
         except Exception as e:
-            logging.error(f"Failed to answer question: {e}")
+            logging.info(f"Failed to answer question: {e}")
             raise PDFQAException(e, sys)
-
-
-# Usage
-# if __name__ == "__main__":
-#     try:
-#         pdf_service = PDFService(pdf=PDF())
-#         embedding_service = EmbeddingService(embedding=Embeddings())
-#         vector_db_service = VectorDBService(vector_db=VectorDB())
-#         llm_service = LLMService(llm=LLMs())
-
-#         qa_service = PDFQuestionAnsweringService(
-#             pdf_service=pdf_service,
-#             embedding_service=embedding_service,
-#             vector_db_service=vector_db_service,
-#             llm_service=llm_service,
-#         )
-
-#         data_folder = "path/to/pdf/folder"
-#         question = "What is the main topic of the PDF?"
-
-#         answer = qa_service.answer_question_from_pdf(data_folder, question)
-#         print("Answer:", answer)
-#     except PDFQAException as e:
-#         logging.info("Application failed: {}".format(e))
