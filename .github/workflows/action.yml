@@ -41,5 +41,5 @@ jobs:
 
       - name: Run Tests
         run: |
-          python app.py
-          pytest tests/test_app.py
+          poetry run python app.py
+          poetry run pytest tests/test_app.py
