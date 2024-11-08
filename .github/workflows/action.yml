@@ -39,4 +39,6 @@ jobs:
           poetry install
 
       - name: Running Test Cases
-        run: pytest tests/test_app.py
+        run: |
+          python app.py
+          pytest tests/test_app.py
