@@ -1,0 +1,54 @@
+name: PDF Question Answering Github Actions
+
+on:
+  pull_request:
+    branches: ["main", "development"]
+    paths-ignore:
+      - README.md
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  install-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11.2"
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH  # Add Poetry to PATH
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.in-project true  # Use in-project venv
+
+      - name: Install Dependencies
+        run: |
+          poetry install
+
+      - name: Start FastAPI server
+        run: |
+          nohup poetry run uvicorn app:app --host 0.0.0.0 --port 8000 &
+        # Wait a moment for the server to start
+        timeout-minutes: 2
+
+      - name: Run Tests
+        run: |
+          poetry run pytest tests/test_app.py
+
+      - name: Stop FastAPI server
+        run: |
+          pkill -f uvicorn
