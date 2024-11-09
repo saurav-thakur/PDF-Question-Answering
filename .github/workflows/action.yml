@@ -17,6 +17,9 @@ jobs:
       run:
         working-directory: ./
 
+    env:
+      POSTGRESQL_URL_DATABASE: ${{secrets.POSTGRESQL_URL_DATABASE}}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
