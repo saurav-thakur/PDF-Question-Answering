@@ -20,22 +20,13 @@ from pdf_question_answering.db import models
 from sqlalchemy.orm import Session
 from pdf_question_answering.db.database import engine, SessionLocal
 from pdf_question_answering.db import models
+from pdf_question_answering.db.config import db_dependency
 from datetime import datetime
-
-models.Base.metadata.create_all(bind=engine)
 
 pdf_router = APIRouter()
 
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-db_dependency = Annotated[Session, Depends(get_db)]
+# Create tables if they do not exist
+models.Base.metadata.create_all(bind=engine)
 
 html = """
 <!DOCTYPE html>

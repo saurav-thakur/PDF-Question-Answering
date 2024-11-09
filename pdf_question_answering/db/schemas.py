@@ -10,4 +10,4 @@ class PDFMetaDataBase(BaseModel):
     upload_date: str
 
     class Config:
-        orm_mode = True  # Allow compatibility with ORM models for responses
+        from_attributes = True  # Allow compatibility with ORM models for responses
