@@ -42,13 +42,13 @@ pdf_router = APIRouter()
 # Create tables if they do not exist
 models.Base.metadata.create_all(bind=engine)
 
-embeddings = None
+# embeddings = None
 
 
-@pdf_router.on_event("startup")
-async def startup_event():
-    embeddings = Embeddings().download_hugging_face_embeddings()
-
+# @pdf_router.on_event("startup")
+# async def startup_event():
+#     embeddings = Embeddings().download_hugging_face_embeddings()
+embeddings = Embeddings().download_hugging_face_embeddings()
 
 html = """
 <!DOCTYPE html>
