@@ -8,20 +8,26 @@ from fastapi import (
     Request,
     WebSocket,
     WebSocketDisconnect,
+    Depends,
 )
 from fastapi.responses import HTMLResponse
-from typing import List
+from typing import List, Annotated
 from pdf_question_answering.logger import logging
 from pdf_question_answering.exception import PDFQAException
 from pdf_question_answering.db.schemas import Question
 from main import main
+from pdf_question_answering.db import models
+from sqlalchemy.orm import Session
+from pdf_question_answering.db.database import engine, SessionLocal
+from pdf_question_answering.db import models
+from pdf_question_answering.db.config import db_dependency
+from datetime import datetime
 
 pdf_router = APIRouter()
 
+# Create tables if they do not exist
+models.Base.metadata.create_all(bind=engine)
 
-# # Dependency to get embeddings from the app's state
-# def get_embeddings(request: Request):
-#     return request.app.state.embeddings
 html = """
 <!DOCTYPE html>
 <html>
@@ -68,20 +74,28 @@ async def chat_with_pdf():
 
 
 @pdf_router.post("/upload-pdf")
-async def uploadfile(files: list[UploadFile]):
+async def uploadfile(files: List[UploadFile], db: db_dependency):
     try:
         for file in files:
             file_path = f"./pdf_data/{file.filename}"
             filepath = Path(file_path)
-            print(filepath)
             filedir, filename = os.path.split(filepath)
 
-            if filedir != "":
+            if filedir:
                 os.makedirs(filedir, exist_ok=True)
                 logging.info(f"Creating directory: {filedir} for the file {filename}")
 
             with open(file_path, "wb") as f:
                 f.write(file.file.read())
+
+            # Store in database
+            db_pdf_data = models.PDFData(
+                filename=file.filename, upload_date=datetime.now().isoformat()
+            )
+            db.add(db_pdf_data)
+            db.commit()
+            db.refresh(db_pdf_data)
+            db.commit()
 
     except Exception as e:
         raise PDFQAException(e, sys)
@@ -89,7 +103,7 @@ async def uploadfile(files: list[UploadFile]):
 
 @pdf_router.post("/ask-question")
 async def ask_question(question: Question):
-    return question.question
+    return {"question": question.question}
 
 
 @pdf_router.websocket("/ws")
@@ -99,4 +113,3 @@ async def websocket_endpoint(websocket: WebSocket):
         data = await websocket.receive_text()
         answer = main(data_folder="./pdf_data", question=data)
         await websocket.send_text(f"Answer: {answer}")
-        # await websocket.send_text(f"Message text was: {data}")
