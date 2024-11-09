@@ -1,6 +1,6 @@
 from pinecone.grpc import PineconeGRPC as Pinecone
 from pinecone import ServerlessSpec
-import os
+import os, sys
 from dotenv import load_dotenv
 from langchain_pinecone import PineconeVectorStore
 
@@ -78,4 +78,4 @@ class VectorDB:
             return docsearch
         except Exception as e:
             logging.error("Failed to load existing vector database index: %s", e)
-            raise PDFQAException(e)
+            raise PDFQAException(e, sys)

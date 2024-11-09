@@ -23,10 +23,32 @@ from pdf_question_answering.db import models
 from pdf_question_answering.db.config import db_dependency
 from datetime import datetime
 
+from pdf_question_answering.logger import logging
+from pdf_question_answering.utils.read_pdf import PDF
+from pdf_question_answering.llm.vector_db import VectorDB
+from pdf_question_answering.llm.llm import LLMs
+from pdf_question_answering.llm.embeddings import Embeddings
+
+from fastapi import Request, Depends
+
+
+# # Dependency to get embeddings from the app's state
+# def get_embeddings(request: Request):
+#     return request.app.state.embeddings
+
+
 pdf_router = APIRouter()
 
 # Create tables if they do not exist
 models.Base.metadata.create_all(bind=engine)
+
+embeddings = None
+
+
+@pdf_router.on_event("startup")
+async def startup_event():
+    embeddings = Embeddings().download_hugging_face_embeddings()
+
 
 html = """
 <!DOCTYPE html>
@@ -107,9 +129,41 @@ async def ask_question(question: Question):
 
 
 @pdf_router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(websocket: WebSocket, db: db_dependency):
     await websocket.accept()
     while True:
         data = await websocket.receive_text()
-        answer = main(data_folder="./pdf_data", question=data)
-        await websocket.send_text(f"Answer: {answer}")
+        # Get embeddings explicitly from request
+        # embeddings = embeddings
+        # em
+
+        logging.info(f"Uploaded File")
+        uploaded_file = (
+            db.query(models.PDFData).order_by(models.PDFData.upload_date.desc()).first()
+        )
+        logging.info(f"Uploaded File: {uploaded_file}")
+
+        if uploaded_file:
+            file_path = f"./pdf_data/{uploaded_file.filename}"
+            logging.info(f"Uploaded filename is : {uploaded_file.filename}")
+            # answer = main(data_folder=file_path, question=data)
+            logging.info(f"Loading PDF")
+            pdf_loader = PDF()
+            extracted_data = pdf_loader.read_pdf_file(data=file_path)
+            text_chunks = pdf_loader.split_text(extracted_data)
+            logging.info(f"PDF loaded and splitted")
+
+            vector_db = VectorDB()
+            # vector_db.create_vector_database()
+            # vector_db.insert_data_into_vector_db(
+            #     text_chunks=text_chunks, embeddings=embeddings
+            # )
+            docsearch = vector_db.load_existing_index(embeddings=embeddings)
+            logging.info(f"Vector loaded")
+
+            logging.info(f"LLMs Initialized")
+            llm = LLMs()
+            answer = llm.generate_answer(docsearch=docsearch, question=data)
+            logging.info(f"Answer Generated")
+
+            await websocket.send_text(f"Answer: {answer}")
