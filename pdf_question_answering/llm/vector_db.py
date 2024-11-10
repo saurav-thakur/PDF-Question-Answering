@@ -27,7 +27,7 @@ class VectorDB:
             logging.info("VectorDB initialized with index name: %s", self.index_name)
         except Exception as e:
             logging.error("Failed to initialize VectorDB: %s", e)
-            raise PDFQAException(e)
+            raise PDFQAException(e, sys)
 
     def create_vector_database(self):
         try:
@@ -35,7 +35,7 @@ class VectorDB:
             pc.create_index(
                 name=self.index_name,
                 dimension=self.pinecone_dimension,
-                metric=self.pinecone_dimension,
+                metric=self.pinecone_metric,
                 spec=ServerlessSpec(
                     cloud=self.pinecone_cloud, region=self.pinecone_region
                 ),
@@ -43,7 +43,7 @@ class VectorDB:
             logging.info("Vector database created with index name: %s", self.index_name)
         except Exception as e:
             logging.error("Failed to create vector database: %s", e)
-            raise PDFQAException(e)
+            raise PDFQAException(e, sys)
 
     def insert_data_into_vector_db(self, text_chunks, embeddings):
         try:
@@ -57,7 +57,7 @@ class VectorDB:
             )
         except Exception as e:
             logging.error("Failed to insert data into vector database: %s", e)
-            raise PDFQAException(e)
+            raise PDFQAException(e, sys)
 
     def delete_index(self):
         try:
@@ -66,7 +66,7 @@ class VectorDB:
             logging.info("Deleted vector database index: %s", self.index_name)
         except Exception as e:
             logging.error("Failed to delete vector database index: %s", e)
-            raise PDFQAException(e)
+            raise PDFQAException(e, sys)
 
     def load_existing_index(self, embeddings):
         try:
