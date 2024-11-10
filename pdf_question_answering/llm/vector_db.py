@@ -20,11 +20,6 @@ class VectorDB:
             self.pinecone_metric = METRIC
             self.pinecone_cloud = os.environ.get("PINECONE_CLOUD")
             self.pinecone_region = os.environ.get("PINECONE_REGION")
-            if not self.index_name or not self.pinecone_api_key:
-                raise PDFQAException(
-                    "Missing necessary environment variables for Pinecone configuration.",
-                    sys,
-                )
             logging.info("VectorDB initialized with index name: %s", self.index_name)
         except Exception as e:
             logging.error("Failed to initialize VectorDB: %s", e)
