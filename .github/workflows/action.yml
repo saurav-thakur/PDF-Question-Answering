@@ -19,6 +19,7 @@ jobs:
 
     env:
       POSTGRESQL_URL_DATABASE: ${{secrets.POSTGRESQL_URL_DATABASE}}
+      HOST: ${{secrets.HOST}}
 
     steps:
       - name: Checkout code

@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 import uvicorn
 
@@ -8,6 +9,9 @@ from pdf_question_answering.routers.routes import pdf_router
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from dotenv import load_dotenv
+
+load_dotenv()
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["2/minute"])
 
@@ -39,4 +43,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.include_router(pdf_router, prefix=f"/api/{version}/pdf-qa")
 
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="localhost", reload=True)
+    host = os.environ.get("HOST")
+    uvicorn.run(
+        "app:app", host=host, reload=(True if host == "localhost" else False), port=8000
+    )
