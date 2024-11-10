@@ -1,0 +1,49 @@
+# Python bytecode files
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Dependency directories
+.env
+*.venv
+*.tox
+*.nox
+*.coverage
+*.hypothesis
+*.pytest_cache
+
+# Configuration files and logs
+*.log
+*.log.*
+docker-compose.yml
+
+# Git files
+.git
+.gitignore
+
+# Poetry virtual environments
+.poetry/
+
+# Jupyter notebooks (if you don't need them in the image)
+notebooks/
+
+# Tests (if they are not needed in the image)
+tests/
+
+# IDE files (e.g., PyCharm, VSCode)
+.vscode/
+.idea/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Docker-related files (you don't want to include Dockerfiles in Docker images)
+Dockerfile
+.dockerignore
+
+# Other unnecessary files
+*.md
+README.md
+LICENSE
