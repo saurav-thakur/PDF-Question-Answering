@@ -75,11 +75,23 @@ html = """
                 message.appendChild(content)
                 messages.appendChild(message)
             };
+            // Send the user's question and display it in the chat
             function sendMessage(event) {
-                var input = document.getElementById("messageText")
-                ws.send(input.value)
-                input.value = ''
-                event.preventDefault()
+                var input = document.getElementById("messageText");
+                var messages = document.getElementById('messages');
+
+                // Add user question to the chat
+                var question = document.createElement('li');
+                question.className = "question";
+                question.textContent = "Question: " + input.value;
+                messages.appendChild(question);
+
+                // Send the question via WebSocket
+                ws.send(input.value);
+
+                // Clear the input field
+                input.value = '';
+                event.preventDefault();
             }
         </script>
     </body>
