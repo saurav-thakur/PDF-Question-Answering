@@ -187,9 +187,3 @@ pytest tests/test_app.py
 - **GitHub Actions**: This repository includes an automated workflow (`.github/workflows/action.yml`) that runs tests on each push or pull request to the main or development branch.
 
 ---
-
-## License
-
-This project is licensed under the MIT License.
-
----
