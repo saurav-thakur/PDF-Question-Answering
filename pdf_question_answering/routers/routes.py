@@ -32,6 +32,8 @@ from pdf_question_answering.llm.embeddings import Embeddings
 
 from fastapi import Request, Depends
 
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 # # Dependency to get embeddings from the app's state
 # def get_embeddings(request: Request):
@@ -39,6 +41,7 @@ from fastapi import Request, Depends
 
 
 pdf_router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 # Create tables if they do not exist
 models.Base.metadata.create_all(bind=engine)
@@ -100,7 +103,8 @@ html = """
 
 
 @pdf_router.get("/")
-async def home():
+@limiter.limit("2/minute")
+async def home(request: Request):
     return {"message": "Hello World"}
 
 
@@ -110,7 +114,8 @@ async def chat_with_pdf():
 
 
 @pdf_router.post("/upload-pdf")
-async def uploadfile(files: List[UploadFile], db: db_dependency, request: Request):
+@limiter.limit("2/minute")
+async def uploadfile(request: Request, files: List[UploadFile], db: db_dependency):
     try:
         for file in files:
             file_path = f"./pdf_data/{file.filename}"
@@ -171,7 +176,8 @@ async def delete_pinecone_index():
 
 
 @pdf_router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket, db: db_dependency):
+@limiter.limit("2/minute")
+async def websocket_endpoint(request: Request, websocket: WebSocket, db: db_dependency):
     docsearch = websocket.app.state.store_data["docsearch"]
     llm = LLMs()
     logging.info(f"PDF loaded and splitted")
