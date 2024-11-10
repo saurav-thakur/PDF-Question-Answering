@@ -1,6 +1,4 @@
-Here’s a high-level design (HLD) for the **PDF Question Answering System**:
-
----
+# High Level Design
 
 ### 1. **Overview**
 
@@ -94,7 +92,3 @@ The PDF Question Answering System is designed to allow users to upload PDF docum
 - **Error Handling**: Logs all errors, particularly during PDF parsing and WebSocket communication.
 - **Rate Limiting**: Prevents abuse by restricting request frequency using SlowAPI.
 - **Environment-based Configurations**: Manages configurations based on development, testing, and production environments.
-
----
-
-This HLD provides a structured design for building, deploying, and scaling the PDF Question Answering System with clear separation of responsibilities across components, ensuring efficiency and modularity in the application.
