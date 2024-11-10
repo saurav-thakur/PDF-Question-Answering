@@ -12,8 +12,11 @@ async def lifespan(app: FastAPI):
     embeddings = Embeddings().download_hugging_face_embeddings()
     # Add embeddings to app state for easy access
     app.state.embeddings = embeddings
+
+    # Initialize an empty dictionary in the app state for docsearch storage
+    app.state.store_data = {}
     yield
-    # Any cleanup logic can go here if needed
+    # cleanup logic if needed
 
 
 version = "v1"
@@ -24,8 +27,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-
-# app.router.lifespan_context = lifespan
 app.include_router(pdf_router, prefix=f"/api/{version}/pdf-qa")
 
 if __name__ == "__main__":
