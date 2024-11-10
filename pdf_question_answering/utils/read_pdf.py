@@ -1,4 +1,4 @@
-from langchain.document_loaders import PyPDFLoader, DirectoryLoader
+from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
 
@@ -9,7 +9,7 @@ from pdf_question_answering.exception import PDFQAException
 
 class PDF:
     def read_pdf_file(self, data):
-        loader = DirectoryLoader(data, glob="*.pdf", loader_cls=PyPDFLoader)
+        loader = PyPDFLoader(data)
         documents = loader.load()
         return documents
 
