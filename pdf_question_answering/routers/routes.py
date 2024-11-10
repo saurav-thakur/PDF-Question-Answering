@@ -9,6 +9,7 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
     Depends,
+    HTTPException,
 )
 from fastapi.responses import HTMLResponse
 from typing import List, Annotated
@@ -23,10 +24,33 @@ from pdf_question_answering.db import models
 from pdf_question_answering.db.config import db_dependency
 from datetime import datetime
 
+from pdf_question_answering.logger import logging
+from pdf_question_answering.utils.read_pdf import PDF
+from pdf_question_answering.llm.vector_db import VectorDB
+from pdf_question_answering.llm.llm import LLMs
+from pdf_question_answering.llm.embeddings import Embeddings
+
+from fastapi import Request, Depends
+
+
+# # Dependency to get embeddings from the app's state
+# def get_embeddings(request: Request):
+#     return request.app.state.embeddings
+
+
 pdf_router = APIRouter()
 
 # Create tables if they do not exist
 models.Base.metadata.create_all(bind=engine)
+
+# embeddings = None
+
+
+# @pdf_router.on_event("startup")
+# async def startup_event():
+#     embeddings = Embeddings().download_hugging_face_embeddings()
+embeddings = Embeddings().download_hugging_face_embeddings()
+vector_db = VectorDB()
 
 html = """
 <!DOCTYPE html>
@@ -74,7 +98,7 @@ async def chat_with_pdf():
 
 
 @pdf_router.post("/upload-pdf")
-async def uploadfile(files: List[UploadFile], db: db_dependency):
+async def uploadfile(files: List[UploadFile], db: db_dependency, request: Request):
     try:
         for file in files:
             file_path = f"./pdf_data/{file.filename}"
@@ -97,6 +121,22 @@ async def uploadfile(files: List[UploadFile], db: db_dependency):
             db.refresh(db_pdf_data)
             db.commit()
 
+            # Process the uploaded file
+            pdf_loader = PDF()
+            extracted_data = pdf_loader.read_pdf_file(data=file_path)
+            text_chunks = pdf_loader.split_text(extracted_data)
+
+            vector_db.create_vector_database()
+            vector_db.insert_data_into_vector_db(
+                text_chunks=text_chunks, embeddings=embeddings
+            )
+            docsearch = vector_db.load_existing_index(embeddings=embeddings)
+
+            # Store text_chunks in the app state for this specific file
+            request.app.state.store_data["docsearch"] = docsearch
+
+            logging.info(f"PDF loaded and split into chunks for {file.filename}")
+
     except Exception as e:
         raise PDFQAException(e, sys)
 
@@ -106,10 +146,45 @@ async def ask_question(question: Question):
     return {"question": question.question}
 
 
+@pdf_router.delete("/delete-pinecone-index")
+async def delete_pinecone_index():
+
+    try:
+        vector_db.delete_index()
+        return {"message": "index deleted"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No Index Found"
+        )
+
+
 @pdf_router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(websocket: WebSocket, db: db_dependency):
+    docsearch = websocket.app.state.store_data["docsearch"]
+    llm = LLMs()
+    logging.info(f"PDF loaded and splitted")
+    logging.info(f"Vector loaded")
+    logging.info(f"LLMs Initialized")
     await websocket.accept()
-    while True:
-        data = await websocket.receive_text()
-        answer = main(data_folder="./pdf_data", question=data)
-        await websocket.send_text(f"Answer: {answer}")
+
+    try:
+        while True:
+            data = await websocket.receive_text()
+
+            answer = llm.generate_answer(docsearch=docsearch, question=data)
+            logging.info(f"Answer Generated")
+
+            await websocket.send_text(f"Answer: {answer}")
+    except WebSocketDisconnect:
+        logging.info("WebSocket disconnected. Performing cleanup...")
+
+    finally:
+        # Delete the index when the WebSocket connection is closed
+
+        try:
+            vector_db.delete_index()
+        except Exception as e:
+            logging.info(f"No Index to delete!!")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="No Index Found"
+            )
