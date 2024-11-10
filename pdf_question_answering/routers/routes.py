@@ -35,10 +35,6 @@ from fastapi import Request, Depends
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-# # Dependency to get embeddings from the app's state
-# def get_embeddings(request: Request):
-#     return request.app.state.embeddings
-
 
 pdf_router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
@@ -46,12 +42,7 @@ limiter = Limiter(key_func=get_remote_address)
 # Create tables if they do not exist
 models.Base.metadata.create_all(bind=engine)
 
-# embeddings = None
 
-
-# @pdf_router.on_event("startup")
-# async def startup_event():
-#     embeddings = Embeddings().download_hugging_face_embeddings()
 embeddings = Embeddings().download_hugging_face_embeddings()
 vector_db = VectorDB()
 
@@ -198,7 +189,6 @@ async def websocket_endpoint(request: Request, websocket: WebSocket, db: db_depe
 
     finally:
         # Delete the index when the WebSocket connection is closed
-
         try:
             vector_db.delete_index()
         except Exception as e:
