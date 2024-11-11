@@ -33,18 +33,10 @@ jobs:
         with:
           python-version: "3.11.2"
 
-      - name: Install Poetry
+      - name: Installing Dependencies
         run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH  # Add Poetry to PATH
-
-      - name: Configure Poetry
-        run: |
-          poetry config virtualenvs.in-project true  # Use in-project venv
-
-      - name: Install Dependencies
-        run: |
-          poetry install
+          python -m pip install --upgrade pip
+          pip install -r ./requirements.txt
 
       - name: Start FastAPI server
         run: |
