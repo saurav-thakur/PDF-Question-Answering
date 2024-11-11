@@ -4,10 +4,13 @@ import pytest
 from httpx import AsyncClient
 from starlette.testclient import TestClient
 from app import app
+from dotenv import load_dotenv
 
+load_dotenv()
 
+HOST = os.environ.get("HOST")
 client = TestClient(app=app)
-base_url = "http://localhost:8000/api/v1/pdf-qa"
+base_url = f"http://{HOST}:8000/api/v1/pdf-qa"
 
 
 @pytest.mark.asyncio
