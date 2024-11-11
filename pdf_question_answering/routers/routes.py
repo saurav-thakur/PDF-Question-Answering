@@ -167,8 +167,7 @@ async def delete_pinecone_index():
 
 
 @pdf_router.websocket("/ws")
-@limiter.limit("2/minute")
-async def websocket_endpoint(request: Request, websocket: WebSocket, db: db_dependency):
+async def websocket_endpoint(websocket: WebSocket, db: db_dependency):
     docsearch = websocket.app.state.store_data["docsearch"]
     llm = LLMs()
     logging.info(f"PDF loaded and splitted")
