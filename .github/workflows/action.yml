@@ -110,8 +110,13 @@ jobs:
         run: |
           docker system prune -af --volumes
           docker image prune -af
+          sudo rm -rf /var/lib/docker || true
           sudo rm -rf /tmp/*
           sudo apt-get clean
+
+      - name: Clear Poetry Cache
+        run: |
+          poetry cache clear --all pypi
 
       - name: Checkout
         uses: actions/checkout@v3
