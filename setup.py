@@ -1,7 +1,7 @@
 import setuptools
 
-with open("README.md", "r", encoding="utf-8") as f:
-    long_desc = f.read()
+# with open("README.md", "r", encoding="utf-8") as f:
+#     long_desc = f.read()
 
 setuptools.setup(
     name="pdf_question_answering",
@@ -9,6 +9,6 @@ setuptools.setup(
     author="Saurav",
     author_email="thakursaurav1341@gmail.com",
     description="pdf question answer chat application",
-    long_description=long_desc,
+    # long_description=long_desc,
     packages=setuptools.find_packages(),
 )
