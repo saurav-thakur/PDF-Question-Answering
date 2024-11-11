@@ -40,13 +40,13 @@ jobs:
 
       - name: Start FastAPI server
         run: |
-          nohup poetry run uvicorn app:app --host 0.0.0.0 --port 8000 &
+          nohup python3 uvicorn app:app --host 0.0.0.0 --port 8000 &
         # Wait a moment for the server to start
         timeout-minutes: 2
 
       - name: Run Tests
         run: |
-          poetry run pytest tests/test_app.py
+          pytest tests/test_app.py
 
       - name: Stop FastAPI server
         run: |
