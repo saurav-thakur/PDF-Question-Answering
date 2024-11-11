@@ -1,19 +1,18 @@
-FROM python:3.11.2
+FROM python:3.11.2 as builder
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy the entire project into the working directory
 COPY . /app
 
-# Install Poetry (latest version)
-RUN curl -sSL https://install.python-poetry.org | python3 -
+RUN curl -sSL https://install.python-poetry.org | python3 - && \
+    ENV PATH="/root/.local/bin:$PATH" && \
+    poetry install --no-root && \
+    rm -rf /root/.cache/pypoetry
 
-# Add Poetry to PATH
-ENV PATH="/root/.local/bin:$PATH"
+FROM python:3.11.2
 
-# Install dependencies from the pyproject.toml using Poetry
-RUN poetry install
+WORKDIR /app
 
-# Run the app using Poetry
+COPY --from=builder /app /app
+
 CMD ["poetry", "run", "python", "app.py"]
