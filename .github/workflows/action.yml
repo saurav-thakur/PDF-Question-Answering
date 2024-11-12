@@ -106,13 +106,13 @@ jobs:
     needs: build-and-push-ecr-image
     runs-on: self-hosted
     steps:
-      # - name: Clean up disk space
-      #   run: |
-      #     docker system prune -af --volumes
-      #     docker image prune -af
-      #     sudo rm -rf /var/lib/docker || true
-      #     sudo rm -rf /tmp/*
-      #     sudo apt-get clean
+      - name: Clean up disk space
+        run: |
+          docker system prune -af --volumes
+          docker image prune -af
+          sudo rm -rf /var/lib/docker || true
+          sudo rm -rf /tmp/*
+          sudo apt-get clean
 
       - name: Checkout
         uses: actions/checkout@v3
@@ -129,6 +129,10 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Configure shared memory
+        run: |
+          sudo mount -o remount,size=2G /dev/shm
 
       - name: Pull latest Docker image
         run: |
