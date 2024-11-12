@@ -37,7 +37,7 @@ The PDF Question Answering System is designed to allow users to upload PDF docum
    - **Caching**: Optionally caches recent document answers to speed up repeated or similar queries.
 
 7. **Cloud Infrastructure**:
-   - **Storage**: Stores PDF files (e.g., on AWS S3 or blob storage).
+   - **Storage**: Stores PDF files. Currently files are being saved locally.
    - **Deployment**: The FastAPI service and WebSocket server are containerized and deployed, potentially using Docker and managed on cloud services like AWS or GCP.
 
 ---
