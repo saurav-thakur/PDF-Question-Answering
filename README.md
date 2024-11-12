@@ -140,23 +140,19 @@ This application allows users to upload PDF files and ask questions about their 
    cd pdf-question-answering
    ```
 
-2. **Install Poetry:**
+
+2. **Create the environment in current directory:**
 
    ```bash
-   pip install poetry
+   conda create --prefix .venv python==3.11.2 -y
    ```
 
-3. **Create the poetry environment in current directory:**
+3. **Activate Environment:**
 
    ```bash
-   poetry config virtualenvs.in-project true
+   conda activate .venv
    ```
 
-4. **Install dependencies with Poetry:**
-
-   ```bash
-   poetry install
-   ```
 
 5. **Run the application locally:**
 
