@@ -130,16 +130,20 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
+      - name: Configure shared memory
+        run: |
+          sudo mount -o remount,size=2G /dev/shm
+
       - name: Pull latest Docker image
         run: |
           # Remove old images before pulling new one
-          docker image prune -af
+          # docker image prune -af
           docker pull ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPO }}:latest
 
-      - name: Stop and remove existing container
-        run: |
-          docker stop $(docker ps -q --filter ancestor=${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPO }}) || true
-          docker rm $(docker ps -aq --filter ancestor=${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPO }}) || true
+      # - name: Stop and remove existing container
+      #   run: |
+      #     docker stop $(docker ps -q --filter ancestor=${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPO }}) || true
+      #     docker rm $(docker ps -aq --filter ancestor=${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPO }}) || true
 
       - name: Run Docker Image to Serve Users
         run: |

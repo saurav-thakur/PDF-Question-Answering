@@ -1,18 +1,9 @@
-FROM python:3.11.2 as builder
+FROM python:3.11.2-slim-buster
 
 WORKDIR /app
 
 COPY . /app
 
-RUN curl -sSL https://install.python-poetry.org | python3 - && \
-    ENV PATH="/root/.local/bin:$PATH" && \
-    poetry install --no-root && \
-    rm -rf /root/.cache/pypoetry
+RUN pip install -r requirements.txt
 
-FROM python:3.11.2
-
-WORKDIR /app
-
-COPY --from=builder /app /app
-
-CMD ["poetry", "run", "python", "app.py"]
+CMD ["python3","app.py"]

@@ -140,19 +140,31 @@ This application allows users to upload PDF files and ask questions about their 
    cd pdf-question-answering
    ```
 
-
-2. **Create the environment in current directory:**
-
-   ```bash
-   conda create --prefix .venv python==3.11.2 -y
-   ```
-
-3. **Activate Environment:**
+2. **Create Conda Environment:**
 
    ```bash
-   conda activate .venv
+   conda create --prefix .venv python=3.11.2 -y
    ```
 
+3. **Activate the Conda Environment:**
+
+   **Using Terminal on Windows**
+
+   ```bash
+   conda activate ./.venv
+   ```
+
+   **Using git bash on Windows**
+
+   ```bash
+   source activate ./.venv
+   ```
+
+4. **Install dependencies:**
+
+   ```bash
+   pip install -r requrements.txt
+   ```
 
 5. **Run the application locally:**
 

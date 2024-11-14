@@ -110,40 +110,46 @@ async def uploadfile(request: Request, files: List[UploadFile], db: db_dependenc
     try:
         for file in files:
             file_path = f"./pdf_data/{file.filename}"
-            filepath = Path(file_path)
-            filedir, filename = os.path.split(filepath)
 
-            if filedir:
-                os.makedirs(filedir, exist_ok=True)
-                logging.info(f"Creating directory: {filedir} for the file {filename}")
+            if file.filename.endswith(".pdf"):
+                filepath = Path(file_path)
+                filedir, filename = os.path.split(filepath)
 
-            with open(file_path, "wb") as f:
-                f.write(file.file.read())
+                if filedir:
+                    os.makedirs(filedir, exist_ok=True)
+                    logging.info(
+                        f"Creating directory: {filedir} for the file {filename}"
+                    )
 
-            # Store in database
-            db_pdf_data = models.PDFData(
-                filename=file.filename, upload_date=datetime.now().isoformat()
-            )
-            db.add(db_pdf_data)
-            db.commit()
-            db.refresh(db_pdf_data)
-            db.commit()
+                with open(file_path, "wb") as f:
+                    f.write(file.file.read())
 
-            # Process the uploaded file
-            pdf_loader = PDF()
-            extracted_data = pdf_loader.read_pdf_file(data=file_path)
-            text_chunks = pdf_loader.split_text(extracted_data)
+                # Store in database
+                db_pdf_data = models.PDFData(
+                    filename=file.filename, upload_date=datetime.now().isoformat()
+                )
+                db.add(db_pdf_data)
+                db.commit()
+                db.refresh(db_pdf_data)
+                db.commit()
 
-            vector_db.create_vector_database()
-            vector_db.insert_data_into_vector_db(
-                text_chunks=text_chunks, embeddings=embeddings
-            )
-            docsearch = vector_db.load_existing_index(embeddings=embeddings)
+                # Process the uploaded file
+                pdf_loader = PDF()
+                extracted_data = pdf_loader.read_pdf_file(data=file_path)
+                text_chunks = pdf_loader.split_text(extracted_data)
 
-            # Store text_chunks in the app state for this specific file
-            request.app.state.store_data["docsearch"] = docsearch
+                vector_db.create_vector_database()
+                vector_db.insert_data_into_vector_db(
+                    text_chunks=text_chunks, embeddings=embeddings
+                )
+                docsearch = vector_db.load_existing_index(embeddings=embeddings)
 
-            logging.info(f"PDF loaded and split into chunks for {file.filename}")
+                # Store text_chunks in the app state for this specific file
+                request.app.state.store_data["docsearch"] = docsearch
+
+                logging.info(f"PDF loaded and split into chunks for {file.filename}")
+        else:
+            return HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
     except Exception as e:
         raise PDFQAException(e, sys)
