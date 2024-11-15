@@ -10,7 +10,9 @@ from fastapi import (
     WebSocketDisconnect,
     Depends,
     HTTPException,
+    File,
 )
+import shutil
 from fastapi.responses import HTMLResponse
 from typing import List, Annotated
 from pdf_question_answering.logger import logging
@@ -34,6 +36,14 @@ from fastapi import Request, Depends
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+import asyncio
+from typing import List
+from fastapi.responses import JSONResponse
+from websockets import connect
+
+# List to store active WebSocket connections
+active_connections: List[WebSocket] = []
+response_queue = asyncio.Queue()
 
 
 pdf_router = APIRouter()
@@ -106,58 +116,90 @@ async def chat_with_pdf():
 
 @pdf_router.post("/upload-pdf")
 @limiter.limit("2/minute")
-async def uploadfile(request: Request, files: List[UploadFile], db: db_dependency):
+async def uploadfile(request: Request, file: UploadFile, db: db_dependency):
     try:
-        for file in files:
-            file_path = f"./pdf_data/{file.filename}"
+        # for file in files:
+        file_path = f"./pdf_data/{file.filename}"
 
-            if file.filename.endswith(".pdf"):
-                filepath = Path(file_path)
-                filedir, filename = os.path.split(filepath)
+        # if file.filename.endswith(".pdf"):
+        filepath = Path(file_path)
+        filedir, filename = os.path.split(filepath)
 
-                if filedir:
-                    os.makedirs(filedir, exist_ok=True)
-                    logging.info(
-                        f"Creating directory: {filedir} for the file {filename}"
-                    )
+        if filedir:
+            os.makedirs(filedir, exist_ok=True)
+            logging.info(f"Creating directory: {filedir} for the file {filename}")
 
-                with open(file_path, "wb") as f:
-                    f.write(file.file.read())
+        with open(file_path, "wb") as f:
+            f.write(file.file.read())
 
-                # Store in database
-                db_pdf_data = models.PDFData(
-                    filename=file.filename, upload_date=datetime.now().isoformat()
-                )
-                db.add(db_pdf_data)
-                db.commit()
-                db.refresh(db_pdf_data)
-                db.commit()
+        # Store in database
+        db_pdf_data = models.PDFData(
+            filename=file.filename, upload_date=datetime.now().isoformat()
+        )
+        db.add(db_pdf_data)
+        db.commit()
+        db.refresh(db_pdf_data)
+        db.commit()
 
-                # Process the uploaded file
-                pdf_loader = PDF()
-                extracted_data = pdf_loader.read_pdf_file(data=file_path)
-                text_chunks = pdf_loader.split_text(extracted_data)
+        # Process the uploaded file
+        pdf_loader = PDF()
+        extracted_data = pdf_loader.read_pdf_file(data=file_path)
+        text_chunks = pdf_loader.split_text(extracted_data)
 
-                vector_db.create_vector_database()
-                vector_db.insert_data_into_vector_db(
-                    text_chunks=text_chunks, embeddings=embeddings
-                )
-                docsearch = vector_db.load_existing_index(embeddings=embeddings)
+        vector_db.create_vector_database()
+        vector_db.insert_data_into_vector_db(
+            text_chunks=text_chunks, embeddings=embeddings
+        )
+        docsearch = vector_db.load_existing_index(embeddings=embeddings)
 
-                # Store text_chunks in the app state for this specific file
-                request.app.state.store_data["docsearch"] = docsearch
+        # Store text_chunks in the app state for this specific file
+        request.app.state.store_data["docsearch"] = docsearch
 
-                logging.info(f"PDF loaded and split into chunks for {file.filename}")
-        else:
-            return HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+        logging.info(f"PDF loaded and split into chunks for {file.filename}")
+        # else:
+        #     return HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+
+        # Establish WebSocket connection
+        websocket_url = "http://localhost:8000/api/v1/pdf-qa/ws"
+        async with connect(websocket_url) as websocket:
+            await websocket.send_text(
+                "WebSocket connection initialized after PDF upload"
+            )
+            logging.info("WebSocket connection opened")
+
+        return {"message": f"PDF {file.filename} uploaded and processed successfully."}
 
     except Exception as e:
         raise PDFQAException(e, sys)
 
 
-@pdf_router.post("/ask-question")
+@pdf_router.post("/ask")
 async def ask_question(question: Question):
-    return {"question": question.question}
+    if active_connections:
+        websocket = active_connections[0]  # Use the first available connection
+        await websocket.send_text(question["question"])
+        return {"message": question}
+
+
+@pdf_router.post("/ask-question")
+async def ask_question(question):
+    # Check if there are active WebSocket connections
+    if active_connections:
+        websocket = active_connections[0]  # Use the first available connection
+        await websocket.send_text(question["question"])  # Send question to WebSocket
+
+        # Wait for the answer to be placed in the response queue
+        try:
+            answer = await asyncio.wait_for(
+                response_queue.get(), timeout=10.0
+            )  # Set a timeout
+            return {"answer": answer}
+        except asyncio.TimeoutError:
+            raise HTTPException(
+                status_code=504, detail="Timeout waiting for response from WebSocket"
+            )
+    else:
+        raise HTTPException(status_code=400, detail="No active WebSocket connections")
 
 
 @pdf_router.delete("/delete-pinecone-index")
@@ -180,6 +222,7 @@ async def websocket_endpoint(websocket: WebSocket, db: db_dependency):
     logging.info(f"Vector loaded")
     logging.info(f"LLMs Initialized")
     await websocket.accept()
+    active_connections.append(websocket)
 
     try:
         while True:
@@ -187,9 +230,12 @@ async def websocket_endpoint(websocket: WebSocket, db: db_dependency):
 
             answer = llm.generate_answer(docsearch=docsearch, question=data)
             logging.info(f"Answer Generated")
-
+            await response_queue.put(
+                answer
+            )  # Also put the answer in the response queue for the API
             await websocket.send_text(f"Answer: {answer}")
     except WebSocketDisconnect:
+        active_connections.remove(websocket)
         logging.info("WebSocket disconnected. Performing cleanup...")
 
     finally:
