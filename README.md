@@ -3,6 +3,13 @@
 This application allows users to upload PDF files and ask questions about their contents in real time. The app leverages an LLM (Language Model) for extracting relevant information from uploaded PDFs and uses a WebSocket to provide a chat-like interface.
 
 ---
+## How it Works
+---
+![image](https://github.com/user-attachments/assets/53bb38fd-b554-4bf4-8cc5-5de4ac535a60)
+
+
+
+---
 
 ## Project Structure
 
