@@ -87,7 +87,6 @@ The PDF Question Answering System is designed to allow users to upload PDF docum
 
 ### 6. **Security and Error Handling**
 
-- **Authentication & Authorization**: Implemented for file uploads and WebSocket access if required.
 - **Data Validation**: Ensures PDF format and file size limits for uploads.
 - **Error Handling**: Logs all errors, particularly during PDF parsing and WebSocket communication.
 - **Rate Limiting**: Prevents abuse by restricting request frequency using SlowAPI.
